@@ -28,9 +28,8 @@ const download = () => {
 };
 
 const steps = [
-  ["1 · Channel list", "Is the channel on your offline AI checklist? → red AI badge."],
-  ["2 · Description", "Title or description mentions AI tools (Sora, ElevenLabs, TTS…)? → red."],
-  ["3 · 10s voice check", "Still clean? It listens to 10 seconds locally. AI voice → red, otherwise green."],
+  ["1 · AiSList blocklist", "Channel is on the ~39,700-creator AiSList (bundled offline)? → red AI."],
+  ["2 · Background 10s voice check", "Not on the list? It silently listens to 10 seconds of the video in the background. AI voice → red AI, otherwise green Non AI."],
 ];
 
 function Index() {
