@@ -1,0 +1,17 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body{width:290px;font:13px system-ui,sans-serif;background:#111;color:#eee;margin:0;padding:14px}
+h1{font-size:15px;margin:0 0 4px;color:#f87171}p{margin:0 0 10px;color:#999;font-size:12px}
+textarea{width:100%;height:110px;background:#1c1c1c;color:#eee;border:1px solid #333;border-radius:6px;font:12px monospace;box-sizing:border-box}
+button{margin-top:8px;width:100%;padding:8px;border:0;border-radius:6px;background:#dc2626;color:#fff;font-weight:700;cursor:pointer}
+label{display:flex;gap:6px;align-items:center;margin:10px 0}.s{background:#333}
+</style></head><body>
+<h1>AI Video Radar</h1>
+<p>Runs 100% on your device. Paste AI channels (one @handle per line) from the GitHub list.</p>
+<textarea id="list" placeholder="@channelhandle"></textarea>
+<button id="save">Save list</button>
+<label><input type="checkbox" id="blur"> Blur AI thumbnails in feed</label>
+<button id="clear" class="s">Reset voice-check cache</button>
+<p id="stat" style="margin-top:10px"></p>
+<script src="popup.js"></script>
+</body></html>
