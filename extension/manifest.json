@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "AI Video Radar for YouTube",
+  "version": "1.0.0",
+  "description": "Flags AI-generated YouTube videos in your feed. 100% local: channel list, description scan, 10s voice check.",
+  "permissions": ["storage"],
+  "host_permissions": ["*://*.youtube.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["list.js", "content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": { "default_popup": "popup.html", "default_icon": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" } },
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" },
+  "browser_specific_settings": { "gecko": { "id": "ai-video-radar@local", "strict_min_version": "121.0" } }
+}
