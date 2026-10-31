@@ -3,6 +3,7 @@
 (() => {
   const api = typeof browser !== "undefined" ? browser : chrome;
 
+  let settings = { blur: false };
   let userChannels = [];
   const norm = (s) => (s || "").toLowerCase().replace(/^@/, "").trim();
   const BASE = new Set(AIR_BLOCKLIST.split("\n").map(norm).filter(Boolean));
@@ -14,7 +15,6 @@
     settings = Object.assign(settings, d.settings || {});
     rebuild(); scan(); watchPage();
   });
-  let settings = { blur: false };
 
   const onList = (...keys) => keys.some((k) => k && channelSet.has(norm(k)));
 
