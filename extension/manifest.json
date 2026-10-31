@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "AI Video Radar for YouTube",
-  "version": "2.0.0",
-  "description": "Flags AI YouTube videos in your feed: offline AiSList blocklist + silent 10s background voice check.",
+  "version": "3.0.0",
+  "description": "Flags AI YouTube videos in your feed using the offline AiSList blocklist. Everything unknown stays marked with a question mark.",
   "permissions": ["storage"],
   "host_permissions": ["*://*.youtube.com/*"],
   "content_scripts": [
@@ -11,7 +11,7 @@
       "js": ["list.js", "content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle",
-      "all_frames": true
+      "all_frames": false
     }
   ],
   "action": { "default_popup": "popup.html", "default_icon": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" } },
