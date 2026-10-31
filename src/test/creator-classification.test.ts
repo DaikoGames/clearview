@@ -8,8 +8,8 @@ const context = createContext({});
 for (const file of ["kagi.js", "classify.js"]) {
   runInContext(readFileSync(resolve("extension", file), "utf8"), context);
 }
-const snapshot = context.AIR_KAGI as { creators: Creator[] };
-const createClassifier = context.AIR_CREATE_CLASSIFIER as (blocked: string[], creators: Creator[]) => (keys: string[], name?: string) => string;
+const snapshot = context["AIR_KAGI"] as { creators: Creator[] };
+const createClassifier = context["AIR_CREATE_CLASSIFIER"] as (blocked: string[], creators: Creator[]) => (keys: string[], name?: string) => string;
 const classify = createClassifier(["@blockedcreator"], snapshot.creators);
 
 describe("offline creator list rules", () => {
