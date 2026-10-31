@@ -28,8 +28,8 @@ const download = () => {
 };
 
 const steps = [
-  ["1 · AiSList blocklist", "Channel is on the ~39,700-creator AiSList (bundled offline)? → red AI."],
-  ["2 · Background 10s voice check", "Not on the list? It silently listens to 10 seconds of the video in the background. AI voice → red AI, otherwise green Non AI."],
+  ["1 · AiSList blocklist", "Channel is on the ~39,700-creator AiSList (bundled offline)? → red AI badge, before you even see the video."],
+  ["2 · Everything else", "Creator not on the list? The thumbnail gets a grey ? badge — it simply means \"unknown\" until you tell the extension otherwise."],
 ];
 
 function Index() {
