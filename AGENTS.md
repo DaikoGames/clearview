@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- The browser extension lives in `extension/` and is packaged into `public/ai-video-radar.zip`; keep its dependencies bundled so classification works offline.
+- Creator classification is shared through a plain browser-safe script, with blocklist precedence and Kagi matches restricted to stable channel IDs or handles to avoid display-name collisions.
+- Kagi list snapshots include source revision and retrieval date; refresh them only when rebuilding the extension, not at runtime.

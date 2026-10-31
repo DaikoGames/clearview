@@ -8,9 +8,11 @@ label{display:flex;gap:6px;align-items:center;margin:10px 0}.s{background:#333}
 </style></head><body>
 <h1>AI Video Radar</h1>
 <p>Runs 100% on your device. Includes the AiSList blocklist (~39,700 channels). Add extra AI channels below, one @handle per line.</p>
+<p>Red AI = blocklisted. Green Kagi-listed = on Kagi Small Web, not verified AI-free. ? = unknown.</p>
+<p id="kagi-stat"></p>
 <textarea id="list" placeholder="@channelhandle"></textarea>
 <button id="save">Save list</button>
 <label><input type="checkbox" id="blur"> Blur AI thumbnails in feed</label>
 <p id="stat" style="margin-top:10px"></p>
-<script src="popup.js"></script>
+<script src="kagi.js"></script><script src="popup.js"></script>
 </body></html>

@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "AI Video Radar — spot AI videos on YouTube" },
-      { name: "description", content: "Browser extension that flags AI-generated YouTube videos in your feed, fully offline." },
+      { name: "description", content: "Offline YouTube creator badges: AI blocklist matches, Kagi-listed creators, and unknown channels." },
       { property: "og:title", content: "AI Video Radar" },
-      { property: "og:description", content: "Flag AI-generated YouTube videos before you click. 100% local." },
+      { property: "og:description", content: "AI, Kagi-listed, or unknown: see offline creator-list matches before you click." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -29,7 +30,8 @@ const download = () => {
 
 const steps = [
   ["1 · AiSList blocklist", "Channel is on the ~39,700-creator AiSList (bundled offline)? → red AI badge, before you even see the video."],
-  ["2 · Everything else", "Creator not on the list? The thumbnail gets a grey ? badge — it simply means \"unknown\" until you tell the extension otherwise."],
+  ["2 · Kagi Small Web", "Creator matches the bundled Kagi YouTube list? → green Kagi-listed badge. This is list membership, not proof that every video is AI-free. AI blocklist matches take priority."],
+  ["3 · Everything else", "No confirmed list match? → grey ? badge. No audio checks, background playback, or online lookups."],
 ];
 
 function Index() {
@@ -39,11 +41,12 @@ function Index() {
         <p className="font-mono text-xs uppercase tracking-widest text-primary">Browser extension · offline</p>
         <h1 className="mt-3 text-5xl font-black tracking-tight">AI Video Radar</h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          See which YouTube videos are AI before you click. Nothing leaves your computer.
+          See AI-blocklisted, Kagi-listed, and unknown creators before you click. All checks stay on your computer.
         </p>
-        <button onClick={download} className="mt-8 rounded-md bg-primary px-6 py-3 font-bold text-primary-foreground hover:opacity-90">
+        <Button onClick={download} size="lg" className="mt-8 font-bold">
           Download extension (.zip)
-        </button>
+        </Button>
+        <p className="mt-3 text-sm text-muted-foreground">Kagi snapshot bundled October 31, 2026. New snapshots come with extension downloads, not automatic online updates. Unresolved channel identities stay unknown.</p>
         <div className="mt-12 grid gap-3">
           {steps.map(([t, d]) => (
             <div key={t} className="rounded-lg border border-border bg-card p-4">
