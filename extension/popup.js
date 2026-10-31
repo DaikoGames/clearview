@@ -1,12 +1,13 @@
 const api = typeof browser !== "undefined" ? browser : chrome;
 const $ = (id) => document.getElementById(id);
 let settings = { blur: false };
+$("kagi-stat").textContent = `${AIR_KAGI.creators.length} Kagi creators · bundled ${AIR_KAGI.retrieved}. New list snapshots come with extension downloads; no online updates.`;
 api.storage.local.get(["userChannels", "settings", "userChannelsCount"], (d) => {
   settings = Object.assign(settings, d.settings || {});
   $("list").value = (d.userChannels || []).join("\n");
   $("blur").checked = settings.blur;
   const extra = (d.userChannels || []).length;
-  $("stat").textContent = extra ? `${extra} extra channel(s) added by you` : "Using the built-in AiSList only";
+  $("stat").textContent = extra ? `${extra} extra AI channel(s) added by you` : "Using the built-in AiSList and Kagi lists";
 });
 const set = (k, val) => { settings[k] = val; api.storage.local.set({ settings }); };
 $("save").onclick = () => {

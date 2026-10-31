@@ -1,14 +1,13 @@
 // AI Video Radar — fully local. Only talks to YouTube itself; no third-party servers.
-// Marks channels on the AiSList blocklist as AI; everything else stays "?" (unknown).
+// AiSList -> AI, Kagi Small Web -> Kagi-listed, otherwise unknown.
 (() => {
   const api = typeof browser !== "undefined" ? browser : chrome;
 
   let settings = { blur: false };
   let userChannels = [];
-  const norm = (s) => (s || "").toLowerCase().replace(/^@/, "").trim();
-  const BASE = new Set(AIR_BLOCKLIST.split("\n").map(norm).filter(Boolean));
-  let channelSet = BASE;
-  const rebuild = () => { channelSet = new Set(BASE); userChannels.forEach((c) => channelSet.add(norm(c))); };
+  let classify;
+  const rebuild = () => { classify = AIR_CREATE_CLASSIFIER([...AIR_BLOCKLIST.split("\n"), ...userChannels], AIR_KAGI.creators); };
+  rebuild();
 
   api.storage.local.get(["userChannels", "settings"], (d) => {
     userChannels = d.userChannels || [];
@@ -16,21 +15,32 @@
     rebuild(); scan(); watchPage();
   });
 
-  const onList = (...keys) => keys.some((k) => k && channelSet.has(norm(k)));
+  function channelKeys(element) {
+    const keys = Array.from(element.querySelectorAll('a[href]')).flatMap((a) => {
+      try {
+        const url = new URL(a.getAttribute("href"), location.origin);
+        if (url.hostname !== "youtube.com" && !url.hostname.endsWith(".youtube.com")) return [];
+        const match = url.pathname.match(/^\/(?:channel\/([^/]+)|(@[^/]+))/);
+        return match ? [decodeURIComponent(match[1] || match[2])] : [];
+      } catch { return []; }
+    });
+    // YouTube renderers can carry a stable ID even when the visible link uses a handle.
+    const data = element.data;
+    const runs = data?.shortBylineText?.runs || data?.videoRenderer?.shortBylineText?.runs || data?.content?.videoRenderer?.shortBylineText?.runs || [];
+    runs.forEach((run) => { const id = run.navigationEndpoint?.browseEndpoint?.browseId; if (id) keys.push(id); });
+    return keys;
+  }
 
   const CARD = "ytd-rich-item-renderer,ytd-video-renderer,ytd-compact-video-renderer,ytd-grid-video-renderer,yt-lockup-view-model,ytd-reel-item-renderer,ytm-shorts-lockup-view-model";
 
   function verdictForCard(card) {
     const link = card.querySelector('a[href*="watch?v="],a[href*="/shorts/"]');
     if (!link) return null;
-    const chLink = card.querySelector('a[href^="/@"],a[href^="/channel/"]');
-    const href = chLink ? chLink.getAttribute("href") : "";
-    const part = href ? decodeURIComponent(href.split("/")[href.startsWith("/@") ? 1 : 2] || "") : "";
     const chName = card.querySelector("#channel-name #text, ytd-channel-name a, .yt-content-metadata-view-model__metadata-text")?.textContent;
-    return onList(part, chName) ? "ai" : "unknown";
+    return classify(channelKeys(card), chName);
   }
 
-  const LABEL = { ai: "AI", unknown: "?" };
+  const LABEL = { ai: "AI", kagi: "Kagi-listed", unknown: "?" };
   function badge(card, v) {
     const thumb = card.querySelector("ytd-thumbnail,yt-thumbnail-view-model,a#thumbnail,.yt-lockup-view-model__content-image") || card;
     let b = thumb.querySelector(":scope > .air-badge");
@@ -40,10 +50,12 @@
     b.dataset.v = v;
     b.className = "air-badge air-" + v;
     b.textContent = LABEL[v];
+    b.title = v === "kagi" ? "On the bundled Kagi Small Web list; not verified AI-free." : v === "ai" ? "On the AI creator blocklist." : "Creator not identified on either list.";
   }
 
   function scan() {
     document.querySelectorAll(CARD).forEach((card) => { const v = verdictForCard(card); if (v) badge(card, v); });
+    checkWatch();
   }
   let t;
   new MutationObserver(() => { clearTimeout(t); t = setTimeout(scan, 250); })
@@ -57,11 +69,13 @@
   }
   function checkWatch() {
     const id = (location.href || "").match(/(?:v=|shorts\/)([\w-]{11})/);
-    if (!id) return;
-    const owner = document.querySelector("ytd-video-owner-renderer a[href^='/@'],ytd-video-owner-renderer a[href^='/channel/']")?.getAttribute("href") || "";
+    if (!id) { document.querySelector(".air-watch")?.remove(); return; }
+    const owner = document.querySelector("ytd-video-owner-renderer,#owner");
     const name = document.querySelector("ytd-video-owner-renderer #channel-name #text,#owner #text")?.textContent;
-    pill("unknown", "? Unknown");
-    if (onList(owner.split("/")[owner.startsWith("/@") ? 1 : 2], name)) pill("ai", "AI VIDEO · AiSList");
+    const v = classify(owner ? channelKeys(owner) : [], name);
+    const text = { ai: "AI VIDEO · Blocklist", kagi: "Kagi-listed · Not verified AI-free", unknown: "? Unknown" }[v];
+    const current = document.querySelector(".air-watch");
+    if (current?.textContent !== text) pill(v, text);
   }
   function watchPage() {
     checkWatch();
