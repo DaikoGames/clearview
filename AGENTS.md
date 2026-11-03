@@ -13,3 +13,4 @@
 - Creator classification is shared through a plain browser-safe script, with blocklist precedence and Kagi matches restricted to stable channel IDs or handles to avoid display-name collisions.
 - Kagi list snapshots include source revision and retrieval date; refresh them only when rebuilding the extension, not at runtime.
 - Official AI disclosure detection reads exact labels from YouTube disclosure/badge UI already present on the page, never arbitrary title text or background watch-page requests; disclosure matches take priority over creator lists.
+- Text warnings use bounded local artifact matching on displayed title/description nodes and user-opened transcript segments; keep them separate from confirmed AI labels because wording is not proof of authorship.

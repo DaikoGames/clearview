@@ -5,9 +5,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "AI Video Radar — spot AI videos on YouTube" },
-      { name: "description", content: "Local YouTube badges for available official AI labels, AI blocklist matches, Kagi-listed creators, and unknown videos." },
+      { name: "description", content: "Local YouTube badges for official AI labels, creator lists, and cautious suspected-AI text warnings in displayed descriptions and opened transcripts." },
       { property: "og:title", content: "AI Video Radar" },
-      { property: "og:description", content: "Spot available YouTube AI disclosures and creator-list matches locally before you click." },
+      { property: "og:description", content: "Local AI labels, creator-list matches, and suspected-AI warnings for displayed text. No background video downloads." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -31,7 +31,8 @@ const download = () => {
 const steps = [
   ["1 · YouTube AI labels + blocklist", "An official YouTube AI disclosure is available on the feed card, or the creator is on AiSList? → red AI badge. Labels only shown after opening a video cannot be checked from the feed."],
   ["2 · Kagi Small Web", "Creator matches the bundled Kagi YouTube list? → green Kagi-listed badge. This is list membership, not proof that every video is AI-free. AI blocklist matches take priority."],
-  ["3 · Everything else", "No available AI disclosure or confirmed list match? → grey ? badge. A missing label does not mean non-AI. No audio checks, background playback, or online lookups."],
+  ["3 · Text clues", "Possible AI-assistant wording in displayed titles, descriptions, or transcripts you open? → amber Suspected AI warning. This is a simple local wording check, not reliable authorship detection. Quotes can trigger it; ordinary AI writing may be missed. It cannot detect an AI voice."],
+  ["4 · Everything else", "No available AI disclosure, text warning, or confirmed list match? → grey ? badge. A missing label does not mean non-AI. No audio checks, background playback, or online lookups. Transcripts are only checked once you open them; text hidden from the feed cannot be checked before clicking."],
 ];
 
 function Index() {
