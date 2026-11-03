@@ -32,15 +32,18 @@
   }
 
   const CARD = "ytd-rich-item-renderer,ytd-video-renderer,ytd-compact-video-renderer,ytd-grid-video-renderer,yt-lockup-view-model,ytd-reel-item-renderer,ytm-shorts-lockup-view-model";
+  const FEED_TEXT = '#video-title,#description-text,.metadata-snippet-text,.yt-lockup-metadata-view-model__title';
 
   function verdictForCard(card) {
     const link = card.querySelector('a[href*="watch?v="],a[href*="/shorts/"]');
     if (!link) return null;
     const chName = card.querySelector("#channel-name #text, ytd-channel-name a, .yt-content-metadata-view-model__metadata-text")?.textContent;
-    return AIR_HAS_AI_DISCLOSURE(card) ? "ai" : classify(channelKeys(card), chName);
+    const base = AIR_HAS_AI_DISCLOSURE(card) ? "ai" : classify(channelKeys(card), chName);
+    if (base === "ai") return base;
+    return AIR_CHECK_TEXT(AIR_TEXT_IN(card, FEED_TEXT)) ? "suspected" : base;
   }
 
-  const LABEL = { ai: "AI", kagi: "Kagi-listed", unknown: "?" };
+  const LABEL = { ai: "AI", suspected: "Suspected AI", kagi: "Kagi-listed", unknown: "?" };
   function badge(card, v) {
     const thumb = card.querySelector("ytd-thumbnail,yt-thumbnail-view-model,a#thumbnail,.yt-lockup-view-model__content-image") || card;
     let b = thumb.querySelector(":scope > .air-badge");
@@ -50,7 +53,7 @@
     b.dataset.v = v;
     b.className = "air-badge air-" + v;
     b.textContent = LABEL[v];
-    b.title = v === "kagi" ? "On the bundled Kagi Small Web list; not verified AI-free." : v === "ai" ? "YouTube AI disclosure or AI creator blocklist match." : "No available AI disclosure or creator-list match.";
+    b.title = v === "suspected" ? "Possible AI-assistant wording in displayed text. May be a quotation or human writing; not proof of AI or a synthetic voice." : v === "kagi" ? "On the bundled Kagi Small Web list; not verified AI-free." : v === "ai" ? "YouTube AI disclosure or AI creator blocklist match." : "No available AI disclosure or creator-list match. Missing text or captions cannot be checked.";
   }
 
   function scan() {
@@ -74,8 +77,12 @@
     const name = document.querySelector("ytd-video-owner-renderer #channel-name #text,#owner #text")?.textContent;
     const watch = document.querySelector("ytd-watch-metadata");
     const disclosed = AIR_HAS_AI_DISCLOSURE(watch);
-    const v = disclosed ? "ai" : classify(owner ? channelKeys(owner) : [], name);
-    const text = { ai: disclosed ? "AI VIDEO · YouTube label" : "AI VIDEO · Blocklist", kagi: "Kagi-listed · Not verified AI-free", unknown: "? Unknown" }[v];
+    const base = disclosed ? "ai" : classify(owner ? channelKeys(owner) : [], name);
+    const description = AIR_TEXT_IN(watch, '#description-inline-expander,#description #description-text,#description yt-attributed-string,#title h1');
+    const transcript = AIR_TEXT_IN(document, 'ytd-transcript-segment-renderer .segment-text,yt-transcript-segment-view-model .segment-text');
+    const suspicious = AIR_CHECK_TEXT(description + " " + transcript);
+    const v = base !== "ai" && suspicious ? "suspected" : base;
+    const text = { ai: disclosed ? "AI VIDEO · YouTube label" : "AI VIDEO · Blocklist", suspected: "Suspected AI · Text clues, not proof", kagi: "Kagi-listed · Not verified AI-free", unknown: "? Unknown" }[v];
     const current = document.querySelector(".air-watch");
     if (current?.textContent !== text) pill(v, text);
   }

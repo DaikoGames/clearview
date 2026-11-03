@@ -1,7 +1,8 @@
-:root{--air-badge-foreground:#fff;--air-ai:#dc2626;--air-kagi:#166534;--air-unknown:#52525b;--air-shadow:0 1px 4px rgba(0,0,0,.5)}
+:root{--air-badge-foreground:#fff;--air-ai:#dc2626;--air-kagi:#166534;--air-suspected:#854d0e;--air-unknown:#52525b;--air-shadow:0 1px 4px rgba(0,0,0,.5)}
 .air-badge{position:absolute;top:6px;left:6px;z-index:50;font:700 11px/1 system-ui,sans-serif;padding:4px 7px;border-radius:4px;color:var(--air-badge-foreground);pointer-events:none;letter-spacing:0;box-shadow:var(--air-shadow)}
 .air-ai{background:var(--air-ai)}
 .air-kagi{background:var(--air-kagi)}
+.air-suspected{background:var(--air-suspected)}
 .air-unknown{background:var(--air-unknown)}
 .air-host{position:relative!important}
 .air-blur img{filter:blur(14px) grayscale(.6)}
