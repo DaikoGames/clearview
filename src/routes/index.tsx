@@ -5,9 +5,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "AI Video Radar — spot AI videos on YouTube" },
-      { name: "description", content: "Offline YouTube creator badges: AI blocklist matches, Kagi-listed creators, and unknown channels." },
+      { name: "description", content: "Local YouTube badges for available official AI labels, AI blocklist matches, Kagi-listed creators, and unknown videos." },
       { property: "og:title", content: "AI Video Radar" },
-      { property: "og:description", content: "AI, Kagi-listed, or unknown: see offline creator-list matches before you click." },
+      { property: "og:description", content: "Spot available YouTube AI disclosures and creator-list matches locally before you click." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -29,9 +29,9 @@ const download = () => {
 };
 
 const steps = [
-  ["1 · AiSList blocklist", "Channel is on the ~39,700-creator AiSList (bundled offline)? → red AI badge, before you even see the video."],
+  ["1 · YouTube AI labels + blocklist", "An official YouTube AI disclosure is available on the feed card, or the creator is on AiSList? → red AI badge. Labels only shown after opening a video cannot be checked from the feed."],
   ["2 · Kagi Small Web", "Creator matches the bundled Kagi YouTube list? → green Kagi-listed badge. This is list membership, not proof that every video is AI-free. AI blocklist matches take priority."],
-  ["3 · Everything else", "No confirmed list match? → grey ? badge. No audio checks, background playback, or online lookups."],
+  ["3 · Everything else", "No available AI disclosure or confirmed list match? → grey ? badge. A missing label does not mean non-AI. No audio checks, background playback, or online lookups."],
 ];
 
 function Index() {

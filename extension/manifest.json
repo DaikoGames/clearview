@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
   "name": "AI Video Radar for YouTube",
-  "version": "3.1.0",
-  "description": "Offline creator badges for YouTube: AI for AiSList matches, Kagi-listed for Kagi Small Web matches, and ? for unknown creators.",
+  "version": "3.2.0",
+  "description": "Local YouTube badges: AI for available YouTube AI disclosures or blocklist matches, Kagi-listed for Kagi creators, ? otherwise.",
   "permissions": ["storage"],
   "host_permissions": ["*://*.youtube.com/*"],
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
-      "js": ["list.js", "kagi.js", "classify.js", "content.js"],
+      "js": ["list.js", "kagi.js", "classify.js", "disclosure.js", "content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle",
       "all_frames": false

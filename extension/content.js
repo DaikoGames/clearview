@@ -37,7 +37,7 @@
     const link = card.querySelector('a[href*="watch?v="],a[href*="/shorts/"]');
     if (!link) return null;
     const chName = card.querySelector("#channel-name #text, ytd-channel-name a, .yt-content-metadata-view-model__metadata-text")?.textContent;
-    return classify(channelKeys(card), chName);
+    return AIR_HAS_AI_DISCLOSURE(card) ? "ai" : classify(channelKeys(card), chName);
   }
 
   const LABEL = { ai: "AI", kagi: "Kagi-listed", unknown: "?" };
@@ -50,7 +50,7 @@
     b.dataset.v = v;
     b.className = "air-badge air-" + v;
     b.textContent = LABEL[v];
-    b.title = v === "kagi" ? "On the bundled Kagi Small Web list; not verified AI-free." : v === "ai" ? "On the AI creator blocklist." : "Creator not identified on either list.";
+    b.title = v === "kagi" ? "On the bundled Kagi Small Web list; not verified AI-free." : v === "ai" ? "YouTube AI disclosure or AI creator blocklist match." : "No available AI disclosure or creator-list match.";
   }
 
   function scan() {
@@ -59,7 +59,7 @@
   }
   let t;
   new MutationObserver(() => { clearTimeout(t); t = setTimeout(scan, 250); })
-    .observe(document.documentElement, { childList: true, subtree: true });
+    .observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["aria-label", "title", "href"] });
 
   // ---------- WATCH PAGE ----------
   function pill(v, text) {
@@ -72,8 +72,10 @@
     if (!id) { document.querySelector(".air-watch")?.remove(); return; }
     const owner = document.querySelector("ytd-video-owner-renderer,#owner");
     const name = document.querySelector("ytd-video-owner-renderer #channel-name #text,#owner #text")?.textContent;
-    const v = classify(owner ? channelKeys(owner) : [], name);
-    const text = { ai: "AI VIDEO · Blocklist", kagi: "Kagi-listed · Not verified AI-free", unknown: "? Unknown" }[v];
+    const watch = document.querySelector("ytd-watch-metadata");
+    const disclosed = AIR_HAS_AI_DISCLOSURE(watch);
+    const v = disclosed ? "ai" : classify(owner ? channelKeys(owner) : [], name);
+    const text = { ai: disclosed ? "AI VIDEO · YouTube label" : "AI VIDEO · Blocklist", kagi: "Kagi-listed · Not verified AI-free", unknown: "? Unknown" }[v];
     const current = document.querySelector(".air-watch");
     if (current?.textContent !== text) pill(v, text);
   }
