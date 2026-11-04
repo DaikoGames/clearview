@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const context = createContext({});
 runInContext(readFileSync(resolve("extension/text-check.js"), "utf8"), context);
-const selectors = context["AIR_TEXT_SELECTORS"] as Record<string, string>;
+const selectors = context["AIR_TEXT_SELECTORS"] as { feed: string; watch: string; transcript: string };
 const extract = context["AIR_TEXT_IN"] as (element: Element, selectors: string) => string;
 const check = context["AIR_CHECK_TEXT"] as (text: string) => boolean;
 
