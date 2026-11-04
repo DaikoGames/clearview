@@ -8,5 +8,5 @@
 - [x] Test label precedence and false positives; update and verify the extension download (14 tests and controlled-feed browser checks passed; live YouTube label availability unverified).
 
 # Local text warnings
-- [ ] Add conservative suspected-AI warnings for displayed descriptions, titles, and opened transcripts.
-- [ ] Verify text warnings and existing labels, then update the extension download.
+- [x] Add conservative suspected-AI warnings for displayed descriptions, titles, and opened transcripts.
+- [x] Verify text warnings and existing labels, then update the extension download (20 tests and controlled browser checks passed; live YouTube untested).
