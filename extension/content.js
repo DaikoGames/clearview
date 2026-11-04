@@ -55,7 +55,7 @@
   }
   let t;
   new MutationObserver(() => { clearTimeout(t); t = setTimeout(scan, 250); })
-    .observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["aria-label", "title", "href"] });
+    .observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["aria-label", "aria-hidden", "hidden", "style", "title", "href"] });
 
   // ---------- WATCH PAGE ----------
   function pill(v, text) {
