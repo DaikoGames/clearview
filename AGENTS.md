@@ -14,3 +14,4 @@
 - Kagi list snapshots include source revision and retrieval date; refresh them only when rebuilding the extension, not at runtime.
 - Official AI disclosure detection reads exact labels from YouTube disclosure/badge UI already present on the page, never arbitrary title text or background watch-page requests; disclosure matches take priority over creator lists.
 - Text warnings use bounded local artifact matching on displayed title/description nodes and user-opened transcript segments; keep them separate from confirmed AI labels because wording is not proof of authorship.
+- Keep text selectors shared in the browser-safe text-check script and regression-test description/transcript extraction so markup coverage changes do not silently disable warnings.

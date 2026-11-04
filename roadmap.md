@@ -10,3 +10,7 @@
 # Local text warnings
 - [x] Add conservative suspected-AI warnings for displayed descriptions, titles, and opened transcripts.
 - [x] Verify text warnings and existing labels, then update the extension download (20 tests and controlled browser checks passed; live YouTube untested).
+
+# Missing suspected-AI warnings
+- [x] Fix extraction of displayed descriptions and modern transcript segments.
+- [x] Add regression coverage, verify actual badge changes, and rebuild the download (24 tests passed; controlled-page warning reproduced and corrected; live YouTube unverified).

@@ -9,12 +9,6 @@
   const rebuild = () => { classify = AIR_CREATE_CLASSIFIER([...AIR_BLOCKLIST.split("\n"), ...userChannels], AIR_KAGI.creators); };
   rebuild();
 
-  api.storage.local.get(["userChannels", "settings"], (d) => {
-    userChannels = d.userChannels || [];
-    settings = Object.assign(settings, d.settings || {});
-    rebuild(); scan(); watchPage();
-  });
-
   function channelKeys(element) {
     const keys = Array.from(element.querySelectorAll('a[href]')).flatMap((a) => {
       try {
@@ -32,7 +26,6 @@
   }
 
   const CARD = "ytd-rich-item-renderer,ytd-video-renderer,ytd-compact-video-renderer,ytd-grid-video-renderer,yt-lockup-view-model,ytd-reel-item-renderer,ytm-shorts-lockup-view-model";
-  const FEED_TEXT = '#video-title,#description-text,.metadata-snippet-text,.yt-lockup-metadata-view-model__title';
 
   function verdictForCard(card) {
     const link = card.querySelector('a[href*="watch?v="],a[href*="/shorts/"]');
@@ -40,7 +33,7 @@
     const chName = card.querySelector("#channel-name #text, ytd-channel-name a, .yt-content-metadata-view-model__metadata-text")?.textContent;
     const base = AIR_HAS_AI_DISCLOSURE(card) ? "ai" : classify(channelKeys(card), chName);
     if (base === "ai") return base;
-    return AIR_CHECK_TEXT(AIR_TEXT_IN(card, FEED_TEXT)) ? "suspected" : base;
+    return AIR_CHECK_TEXT(AIR_TEXT_IN(card, AIR_TEXT_SELECTORS.feed)) ? "suspected" : base;
   }
 
   const LABEL = { ai: "AI", suspected: "Suspected AI", kagi: "Kagi-listed", unknown: "?" };
@@ -62,7 +55,7 @@
   }
   let t;
   new MutationObserver(() => { clearTimeout(t); t = setTimeout(scan, 250); })
-    .observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["aria-label", "title", "href"] });
+    .observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["aria-label", "aria-hidden", "hidden", "style", "title", "href"] });
 
   // ---------- WATCH PAGE ----------
   function pill(v, text) {
@@ -78,8 +71,8 @@
     const watch = document.querySelector("ytd-watch-metadata");
     const disclosed = AIR_HAS_AI_DISCLOSURE(watch);
     const base = disclosed ? "ai" : classify(owner ? channelKeys(owner) : [], name);
-    const description = AIR_TEXT_IN(watch, '#description-inline-expander,#description #description-text,#description yt-attributed-string,#title h1');
-    const transcript = AIR_TEXT_IN(document, 'ytd-transcript-segment-renderer .segment-text,yt-transcript-segment-view-model .segment-text');
+    const description = AIR_TEXT_IN(watch, AIR_TEXT_SELECTORS.watch);
+    const transcript = AIR_TEXT_IN(document, AIR_TEXT_SELECTORS.transcript);
     const suspicious = AIR_CHECK_TEXT(description + " " + transcript);
     const v = base !== "ai" && suspicious ? "suspected" : base;
     const text = { ai: disclosed ? "AI VIDEO · YouTube label" : "AI VIDEO · Blocklist", suspected: "Suspected AI · Text clues, not proof", kagi: "Kagi-listed · Not verified AI-free", unknown: "? Unknown" }[v];
@@ -96,5 +89,10 @@
     if (ch.settings) settings = Object.assign(settings, ch.settings.newValue);
     document.querySelectorAll(".air-badge").forEach((b) => (b.dataset.v = ""));
     scan();
+  });
+  api.storage.local.get(["userChannels", "settings"], (d) => {
+    userChannels = d.userChannels || [];
+    settings = Object.assign(settings, d.settings || {});
+    rebuild(); scan(); watchPage();
   });
 })();

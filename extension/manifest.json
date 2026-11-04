@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Video Radar for YouTube",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "Local YouTube badges: AI for available YouTube AI disclosures or blocklist matches, Kagi-listed for Kagi creators, ? otherwise.",
   "permissions": ["storage"],
   "host_permissions": ["*://*.youtube.com/*"],
