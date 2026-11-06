@@ -3,6 +3,7 @@
 .air-ai{background:var(--air-ai)}
 .air-kagi{background:var(--air-kagi)}
 .air-suspected{background:var(--air-suspected)}
+.air-thumb{background:#c2410c}
 .air-unknown{background:var(--air-unknown)}
 .air-host{position:relative!important}
 .air-blur img{filter:blur(14px) grayscale(.6)}

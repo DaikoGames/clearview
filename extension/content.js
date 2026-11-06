@@ -33,10 +33,57 @@
     const chName = card.querySelector("#channel-name #text, ytd-channel-name a, .yt-content-metadata-view-model__metadata-text")?.textContent;
     const base = AIR_HAS_AI_DISCLOSURE(card) ? "ai" : classify(channelKeys(card), chName);
     if (base === "ai") return base;
+    const vid = (link.getAttribute("href").match(/(?:v=|shorts\/)([\w-]{11})/) || [])[1];
+    if (vid && settings.thumbAI !== false) {
+      const s = thumbScores.get(vid);
+      if (s === undefined) queueThumb(vid, card);
+      else if (s !== null && s >= THUMB_THRESHOLD) return "thumb";
+    }
     return AIR_CHECK_TEXT(AIR_TEXT_IN(card, AIR_TEXT_SELECTORS.feed)) ? "suspected" : base;
   }
 
-  const LABEL = { ai: "AI", suspected: "Suspected AI", kagi: "Kagi-listed", unknown: "?" };
+  // ---------- LOCAL THUMBNAIL AI (runs in a hidden extension frame) ----------
+  const THUMB_THRESHOLD = 0.97;
+  const thumbScores = new Map();
+  const pending = new Set();
+  let frame, frameReady = false, waiting = [];
+  function ensureFrame() {
+    if (frame) return;
+    frame = document.createElement("iframe");
+    frame.src = api.runtime.getURL("ai-frame.html");
+    frame.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;border:0;left:-9px;top:-9px";
+    frame.setAttribute("aria-hidden", "true");
+    document.documentElement.appendChild(frame);
+  }
+  const frameOrigin = new URL(api.runtime.getURL("")).origin;
+  function queueThumb(id, card) {
+    if (pending.has(id)) return;
+    const r = card.getBoundingClientRect();
+    if (r.bottom < -200 || r.top > innerHeight + 600) return; // only cards near the screen
+    pending.add(id);
+    ensureFrame();
+    const msg = { type: "air-thumb", id };
+    frameReady ? frame.contentWindow.postMessage(msg, frameOrigin) : waiting.push(msg);
+  }
+  addEventListener("message", (e) => {
+    if (!frame || e.source !== frame.contentWindow) return;
+    if (e.data?.type === "air-frame-ready") { frameReady = true; waiting.forEach((m) => frame.contentWindow.postMessage(m, frameOrigin)); waiting = []; return; }
+    if (e.data?.type !== "air-thumb-result") return;
+    pending.delete(e.data.id);
+    thumbScores.set(e.data.id, typeof e.data.score === "number" ? e.data.score : null);
+    saveCache();
+    clearTimeout(t); t = setTimeout(scan, 50);
+  });
+  let saveT;
+  function saveCache() {
+    clearTimeout(saveT);
+    saveT = setTimeout(() => {
+      const entries = [...thumbScores].filter(([, s]) => s !== null).slice(-3000);
+      api.storage.local.set({ thumbCache: Object.fromEntries(entries) });
+    }, 1000);
+  }
+
+  const LABEL = { ai: "AI", thumb: "AI thumbnail?", suspected: "Suspected AI", kagi: "Kagi-listed", unknown: "?" };
   function badge(card, v) {
     const thumb = card.querySelector("ytd-thumbnail,yt-thumbnail-view-model,a#thumbnail,.yt-lockup-view-model__content-image") || card;
     let b = thumb.querySelector(":scope > .air-badge");
@@ -46,7 +93,7 @@
     b.dataset.v = v;
     b.className = "air-badge air-" + v;
     b.textContent = LABEL[v];
-    b.title = v === "suspected" ? "Possible AI-assistant wording in displayed text. May be a quotation or human writing; not proof of AI or a synthetic voice." : v === "kagi" ? "On the bundled Kagi Small Web list; not verified AI-free." : v === "ai" ? "YouTube AI disclosure or AI creator blocklist match." : "No available AI disclosure or creator-list match. Missing text or captions cannot be checked.";
+    b.title = v === "thumb" ? "The local image model thinks this thumbnail looks AI-generated. Edited human thumbnails can trigger it; not proof." : v === "suspected" ? "Possible AI-assistant wording in displayed text. May be a quotation or human writing; not proof of AI or a synthetic voice." : v === "kagi" ? "On the bundled Kagi Small Web list; not verified AI-free." : v === "ai" ? "YouTube AI disclosure or AI creator blocklist match." : "No available AI disclosure or creator-list match. Missing text or captions cannot be checked.";
   }
 
   function scan() {
@@ -90,7 +137,9 @@
     document.querySelectorAll(".air-badge").forEach((b) => (b.dataset.v = ""));
     scan();
   });
-  api.storage.local.get(["userChannels", "settings"], (d) => {
+  addEventListener("scroll", () => { clearTimeout(t); t = setTimeout(scan, 250); }, { passive: true });
+  api.storage.local.get(["userChannels", "settings", "thumbCache"], (d) => {
+    Object.entries(d.thumbCache || {}).forEach(([k, s]) => thumbScores.set(k, s));
     userChannels = d.userChannels || [];
     settings = Object.assign(settings, d.settings || {});
     rebuild(); scan(); watchPage();
