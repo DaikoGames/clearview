@@ -48,6 +48,5 @@
       e.source.postMessage({ type: "air-thumb-result", id: m.id, score }, e.origin);
     });
   });
-  e_ready();
-  function e_ready() { parent.postMessage({ type: "air-frame-ready" }, "*"); }
+  parent.postMessage({ type: "air-frame-ready" }, "*"); // carries no data
 })();
