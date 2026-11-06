@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "AI Video Radar for YouTube",
-  "version": "3.3.1",
-  "description": "Local YouTube badges: AI for available YouTube AI disclosures or blocklist matches, Kagi-listed for Kagi creators, ? otherwise.",
+  "version": "4.0.0",
+  "description": "Local YouTube badges: AI labels, AI creator blocklist, and an on-device image model that flags AI-looking thumbnails.",
   "permissions": ["storage"],
-  "host_permissions": ["*://*.youtube.com/*"],
+  "host_permissions": ["*://*.youtube.com/*", "https://i.ytimg.com/*"],
+  "content_security_policy": { "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'" },
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
@@ -14,6 +15,7 @@
       "all_frames": false
     }
   ],
+  "web_accessible_resources": [{ "resources": ["ai-frame.html"], "matches": ["*://*.youtube.com/*"] }],
   "action": { "default_popup": "popup.html", "default_icon": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" } },
   "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" },
   "browser_specific_settings": { "gecko": { "id": "ai-video-radar@local", "strict_min_version": "121.0" } }

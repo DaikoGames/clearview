@@ -132,6 +132,7 @@
   }
 
   api.storage.onChanged.addListener((ch) => {
+    if (!ch.userChannels && !ch.settings) return;
     if (ch.userChannels) { userChannels = ch.userChannels.newValue || []; rebuild(); }
     if (ch.settings) settings = Object.assign(settings, ch.settings.newValue);
     document.querySelectorAll(".air-badge").forEach((b) => (b.dataset.v = ""));
