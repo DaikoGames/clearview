@@ -38,7 +38,8 @@
       let score = null;
       try {
         const s = await load();
-        const x = await pixels([`https://i.ytimg.com/vi/${m.id}/hq720.jpg`, `https://i.ytimg.com/vi/${m.id}/hqdefault.jpg`]);
+        const own = typeof m.url === "string" && m.url.startsWith(`https://i.ytimg.com/vi/${m.id}/`) ? [m.url] : [];
+        const x = await pixels([...own, `https://i.ytimg.com/vi/${m.id}/hqdefault.jpg`]);
         if (x) {
           const out = await s.run({ pixel_values: new ort.Tensor("float32", x, [1, 3, SIZE, SIZE]) });
           const [a, r] = out.logits.data; // 0 = artificial, 1 = real

@@ -36,8 +36,8 @@
     const vid = (link.getAttribute("href").match(/(?:v=|shorts\/)([\w-]{11})/) || [])[1];
     if (vid && settings.thumbAI !== false) {
       const s = thumbScores.get(vid);
-      if (s === undefined) queueThumb(vid, card);
-      else if (s !== null && s >= THUMB_THRESHOLD) return "thumb";
+      if (s === undefined) { queueThumb(vid, card); return "checking"; }
+      if (s !== null && s >= THUMB_THRESHOLD) return "thumb";
     }
     return AIR_CHECK_TEXT(AIR_TEXT_IN(card, AIR_TEXT_SELECTORS.feed)) ? "suspected" : base;
   }
@@ -46,7 +46,7 @@
   const THUMB_THRESHOLD = 0.97;
   const thumbScores = new Map();
   const pending = new Set();
-  let frame, frameReady = false, waiting = [];
+  let frame, frameReady = false;
   function ensureFrame() {
     if (frame) return;
     frame = document.createElement("iframe");
@@ -56,23 +56,45 @@
     document.documentElement.appendChild(frame);
   }
   const frameOrigin = new URL(api.runtime.getURL("")).origin;
+  // Every card YouTube has already put on the page is queued, nearest to the screen first,
+  // so rows below are checked before you scroll to them. One image at a time, using the same
+  // thumbnail file YouTube already loads for that card (usually from the browser cache).
+  const queue = new Map();
+  let busy = false;
+  function thumbUrl(card) {
+    const src = card.querySelector("img[src*='i.ytimg.com']")?.src;
+    return src && /^https:\/\/i\.ytimg\.com\/vi\//.test(src) ? src : null;
+  }
   function queueThumb(id, card) {
     if (pending.has(id)) return;
-    const r = card.getBoundingClientRect();
-    if (r.bottom < -200 || r.top > innerHeight + 600) return; // only cards near the screen
-    pending.add(id);
+    queue.set(id, card);
+    pump();
+  }
+  function pump() {
+    if (busy || !queue.size) return;
     ensureFrame();
-    const msg = { type: "air-thumb", id };
-    frameReady ? frame.contentWindow.postMessage(msg, frameOrigin) : waiting.push(msg);
+    if (!frameReady) return;
+    let best, bestD = Infinity;
+    for (const [id, card] of queue) {
+      if (!card.isConnected) { queue.delete(id); continue; }
+      const r = card.getBoundingClientRect();
+      const d = r.bottom < 0 ? -r.bottom + 2000 : Math.max(0, r.top); // below the screen beats above
+      if (d < bestD) { bestD = d; best = id; }
+    }
+    if (!best) return;
+    const card = queue.get(best); queue.delete(best);
+    busy = true; pending.add(best);
+    frame.contentWindow.postMessage({ type: "air-thumb", id: best, url: thumbUrl(card) }, frameOrigin);
   }
   addEventListener("message", (e) => {
     if (!frame || e.source !== frame.contentWindow) return;
-    if (e.data?.type === "air-frame-ready") { frameReady = true; waiting.forEach((m) => frame.contentWindow.postMessage(m, frameOrigin)); waiting = []; return; }
+    if (e.data?.type === "air-frame-ready") { frameReady = true; pump(); return; }
     if (e.data?.type !== "air-thumb-result") return;
-    pending.delete(e.data.id);
+    pending.delete(e.data.id); busy = false;
     thumbScores.set(e.data.id, typeof e.data.score === "number" ? e.data.score : null);
     saveCache();
     clearTimeout(t); t = setTimeout(scan, 50);
+    setTimeout(pump, 150); // small gap keeps it gentle on CPU and network
   });
   let saveT;
   function saveCache() {
@@ -83,12 +105,13 @@
     }, 1000);
   }
 
-  const LABEL = { ai: "AI", thumb: "AI thumbnail?", suspected: "Suspected AI", kagi: "Kagi-listed", unknown: "?" };
+  const LABEL = { checking: "Checking…", ai: "AI", thumb: "AI thumbnail?", suspected: "Suspected AI", kagi: "Kagi-listed", unknown: "?" };
   function badge(card, v) {
     const thumb = card.querySelector("ytd-thumbnail,yt-thumbnail-view-model,a#thumbnail,.yt-lockup-view-model__content-image") || card;
     let b = thumb.querySelector(":scope > .air-badge");
     if (!b) { b = document.createElement("div"); thumb.classList.add("air-host"); thumb.appendChild(b); }
     thumb.classList.toggle("air-blur", settings.blur && v === "ai");
+    thumb.classList.toggle("air-cover", v === "checking" && settings.hideUntilChecked !== false);
     if (b.dataset.v === v) return;
     b.dataset.v = v;
     b.className = "air-badge air-" + v;

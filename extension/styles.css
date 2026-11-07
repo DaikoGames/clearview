@@ -8,3 +8,6 @@
 .air-host{position:relative!important}
 .air-blur img{filter:blur(14px) grayscale(.6)}
 .air-watch{position:fixed;bottom:18px;right:18px;max-width:calc(100vw - 36px);box-sizing:border-box;z-index:99999;font:700 13px system-ui,sans-serif;padding:9px 13px;border-radius:8px;color:var(--air-badge-foreground);box-shadow:var(--air-shadow)}
+.air-checking{background:var(--air-unknown)}
+.air-cover img{opacity:0!important}
+.air-cover{background:#18181b!important}

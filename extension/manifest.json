@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AI Video Radar for YouTube",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Local YouTube badges: AI labels, AI creator blocklist, and an on-device image model that flags AI-looking thumbnails.",
   "permissions": ["storage"],
   "host_permissions": ["*://*.youtube.com/*", "https://i.ytimg.com/*"],
