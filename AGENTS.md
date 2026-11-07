@@ -15,3 +15,4 @@
 - Official AI disclosure detection reads exact labels from YouTube disclosure/badge UI already present on the page, never arbitrary title text or background watch-page requests; disclosure matches take priority over creator lists.
 - Text warnings use bounded local artifact matching on displayed title/description nodes and user-opened transcript segments; keep them separate from confirmed AI labels because wording is not proof of authorship.
 - Keep text selectors shared in the browser-safe text-check script and regression-test description/transcript extraction so markup coverage changes do not silently disable warnings.
+- Thumbnail AI model and ONNX runtime wasm are never committed (10 MB file limit); `scripts/build-extension.sh` rebuilds them into /tmp and the zip is served as a CDN asset pointer in `src/assets/`, so re-run it and re-upload after any extension change.
