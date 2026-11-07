@@ -16,19 +16,6 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const download = () => {
-  fetch(zipAsset.url)
-    .then((r) => { if (!r.ok) throw new Error("Download failed"); return r.blob(); })
-    .then((b) => {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(b);
-      a.download = "ai-video-radar.zip";
-      a.click();
-      URL.revokeObjectURL(a.href);
-    })
-    .catch((e) => alert(e.message));
-};
-
 const steps = [
   ["1 · YouTube AI labels + blocklist", "An official YouTube AI disclosure is available on the feed card, or the creator is on AiSList? → red AI badge. Labels only shown after opening a video cannot be checked from the feed."],
   ["2 · Kagi Small Web", "Creator matches the bundled Kagi YouTube list? → green Kagi-listed badge. This is list membership, not proof that every video is AI-free. AI blocklist matches take priority."],
@@ -46,8 +33,10 @@ function Index() {
         <p className="mt-4 text-lg text-muted-foreground">
           See AI-blocklisted, Kagi-listed, and unknown creators before you click. All checks stay on your computer.
         </p>
-        <Button onClick={download} size="lg" className="mt-8 font-bold">
-          Download extension (.zip)
+        <Button asChild size="lg" className="mt-8 font-bold">
+          <a href={zipAsset.url} download="ai-video-radar.zip" target="_blank" rel="noopener">
+            Download extension (.zip, ~140 MB)
+          </a>
         </Button>
         <p className="mt-3 text-sm text-muted-foreground">Kagi snapshot bundled October 31, 2026. New snapshots come with extension downloads, not automatic online updates. Unresolved channel identities stay unknown.</p>
         <div className="mt-12 grid gap-3">
