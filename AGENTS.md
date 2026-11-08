@@ -17,3 +17,4 @@
 - Keep text selectors shared in the browser-safe text-check script and regression-test description/transcript extraction so markup coverage changes do not silently disable warnings.
 - Thumbnail AI model and ONNX runtime wasm are never committed (10 MB file limit); `scripts/build-extension.sh` rebuilds them into /tmp and the zip is served as a CDN asset pointer in `src/assets/`, so re-run it and re-upload after any extension change.
 - Keep the required web bootstrap as an empty shell; deliver the standalone extension through Files instead of a download website.
+- Build browser-specific manifests only in staging; GitHub Actions publishes full offline ZIPs and an unsigned Safari Xcode project as release assets, while store signing and approval remain separate.

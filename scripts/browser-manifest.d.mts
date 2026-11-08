@@ -1,0 +1,1 @@
+export function browserManifest<T extends Record<string, unknown>>(source: T, browser: string): T;

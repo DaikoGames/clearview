@@ -2,6 +2,13 @@
 # Extension-only delivery
 - [x] Remove the download website and deliver the existing full offline extension directly through Files (ZIP integrity, bundled model, routing test, and empty preview verified).
 
+# Browser release automation
+- [x] Add GitHub Actions for full Chromium/Firefox release packages and Safari conversion.
+- [x] Document store publication, signing requirements, and release downloads.
+- [x] Test full offline packaging, workflow lint, and 27 regression tests locally.
+- [ ] Verify hosted Actions/model export and Safari conversion; requires a GitHub run and macOS runner.
+- [ ] Publish to browser stores; requires owner store accounts, signing, and store approval.
+
 - [x] Bundle the Kagi YouTube list and add green Kagi-listed badges, preserving AI and unknown labels.
 - [x] Update popup/download information and package the extension.
 - [x] Test matching and verify the downloadable package and badges (controlled YouTube-shaped feed; live YouTube not tested).
