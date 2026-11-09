@@ -1,9 +1,13 @@
+
 name: Build and release browser extensions
 
 on:
   workflow_dispatch:
+
   push:
-    tags: ['v*']
+    tags:
+      - 'v*'
+
   pull_request:
     paths:
       - 'extension/**'
@@ -19,86 +23,318 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+
+  # --------------------------------------------------
+  # 1. Build Chromium, Firefox and Safari source ZIPs
+  # --------------------------------------------------
+
   packages:
+    name: Build browser packages
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.3.13'
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - uses: actions/setup-python@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: bun install --frozen-lockfile
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
       - name: Test extension rules
-        run: bunx vitest run src/test/creator-classification.test.ts src/test/text-check.test.ts src/test/text-extraction.test.ts src/test/youtube-disclosure.test.ts src/test/browser-manifest.test.ts
+        run: |
+          bunx vitest run \
+            src/test/creator-classification.test.ts \
+            src/test/text-check.test.ts \
+            src/test/text-extraction.test.ts \
+            src/test/youtube-disclosure.test.ts \
+            src/test/browser-manifest.test.ts
+
       - name: Install model build dependencies
         run: bash scripts/build-extension.sh deps
+
       - name: Build pinned offline model
         run: bash scripts/build-extension.sh model
+
       - name: Bundle full extension
         run: bash scripts/build-extension.sh pack
+
       - name: Create browser packages
         env:
           RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
         run: node scripts/package-browsers.mjs
-      - name: Validate archives and write checksums
+
+      - name: Validate browser archives
         run: |
-          python3 scripts/verify-extension.py /tmp/air-release/*.zip
+          set -euo pipefail
+
+          mkdir -p /tmp/air-release
+
+          shopt -s nullglob
+          archives=(/tmp/air-release/*.zip)
+
+          if [ "${#archives[@]}" -eq 0 ]; then
+            echo "::error::No browser ZIP files were generated."
+            exit 1
+          fi
+
+          python3 scripts/verify-extension.py "${archives[@]}"
+
+      - name: Generate checksums
+        run: |
+          set -euo pipefail
           cd /tmp/air-release
           sha256sum -- *.zip > SHA256SUMS.txt
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload browser packages
+        uses: actions/upload-artifact@v4
         with:
           name: browser-packages
           path: |
             /tmp/air-release/*.zip
             /tmp/air-release/SHA256SUMS.txt
           if-no-files-found: error
+          retention-days: 14
+
+  # --------------------------------------------------
+  # 2. Convert Safari extension into an Xcode project
+  # --------------------------------------------------
 
   safari:
+    name: Build Safari Xcode project
     needs: packages
     runs-on: macos-14
-    timeout-minutes: 20
+    timeout-minutes: 30
+
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download browser packages
+        uses: actions/download-artifact@v4
         with:
           name: browser-packages
           path: ${{ runner.temp }}/packages
-      - name: Convert to Safari Xcode project (unsigned)
+
+      - name: Check Xcode installation
         run: |
-          xcrun safari-web-extension-converter --help
-          unzip -q "$RUNNER_TEMP/packages/ai-video-radar-safari.zip" -d "$RUNNER_TEMP/safari-source"
-          xcrun safari-web-extension-converter "$RUNNER_TEMP/safari-source" --project-location "$RUNNER_TEMP/safari-project" --app-name "AI Video Radar" --bundle-identifier "com.aivideoradar.extension" --swift --no-open --no-prompt --copy-resources
-          ditto -c -k --keepParent "$RUNNER_TEMP/safari-project" "$RUNNER_TEMP/ai-video-radar-safari-xcode.zip"
-      - uses: actions/upload-artifact@v4
+          set -euo pipefail
+
+          echo "Checking Xcode installation..."
+
+          xcode-select -p
+          xcodebuild -version
+
+      - name: Locate Safari web extension packager
+        id: safari-tool
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if xcrun --find safari-web-extension-packager >/dev/null 2>&1; then
+            echo "tool=safari-web-extension-packager" >> "$GITHUB_OUTPUT"
+            echo "Using modern Safari web extension packager."
+
+          elif xcrun --find safari-web-extension-converter >/dev/null 2>&1; then
+            echo "tool=safari-web-extension-converter" >> "$GITHUB_OUTPUT"
+            echo "Using legacy Safari web extension converter."
+
+          else
+            echo "::error::Neither Safari packaging tool is available."
+            echo "Installed Xcode:"
+            xcodebuild -version
+            echo "Developer directory:"
+            xcode-select -p
+            exit 1
+          fi
+
+      - name: Extract Safari extension
+        id: extract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SAFARI_ZIP="$RUNNER_TEMP/packages/ai-video-radar-safari.zip"
+          SOURCE_DIR="$RUNNER_TEMP/safari-source"
+
+          if [ ! -f "$SAFARI_ZIP" ]; then
+            echo "::error::Safari ZIP was not found: $SAFARI_ZIP"
+            echo "Available packages:"
+            ls -lah "$RUNNER_TEMP/packages"
+            exit 1
+          fi
+
+          mkdir -p "$SOURCE_DIR"
+
+          unzip -q "$SAFARI_ZIP" -d "$SOURCE_DIR"
+
+          MANIFEST=$(find "$SOURCE_DIR" \
+            -type f \
+            -name manifest.json \
+            -print -quit)
+
+          if [ -z "$MANIFEST" ]; then
+            echo "::error::manifest.json was not found in Safari archive."
+            find "$SOURCE_DIR" -maxdepth 4 -type f
+            exit 1
+          fi
+
+          EXTENSION_DIR=$(dirname "$MANIFEST")
+
+          echo "Extension directory: $EXTENSION_DIR"
+          echo "extension_dir=$EXTENSION_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Convert Safari extension into Xcode project
+        shell: bash
+        env:
+          SAFARI_TOOL: ${{ steps.safari-tool.outputs.tool }}
+          EXTENSION_DIR: ${{ steps.extract.outputs.extension_dir }}
+        run: |
+          set -euo pipefail
+
+          PROJECT_DIR="$RUNNER_TEMP/safari-project"
+
+          rm -rf "$PROJECT_DIR"
+
+          echo "Using Safari tool: $SAFARI_TOOL"
+          echo "Source: $EXTENSION_DIR"
+          echo "Output: $PROJECT_DIR"
+
+          xcrun "$SAFARI_TOOL" "$EXTENSION_DIR" \
+            --project-location "$PROJECT_DIR" \
+            --app-name "AI Video Radar" \
+            --bundle-identifier "com.aivideoradar.extension" \
+            --macos-only \
+            --swift \
+            --no-open \
+            --no-prompt \
+            --copy-resources
+
+          if [ ! -d "$PROJECT_DIR" ]; then
+            echo "::error::Safari Xcode project was not generated."
+            exit 1
+          fi
+
+          PROJECT_FILE=$(find "$PROJECT_DIR" \
+            -maxdepth 4 \
+            -name '*.xcodeproj' \
+            -print -quit)
+
+          if [ -z "$PROJECT_FILE" ]; then
+            echo "::error::No Xcode project was found."
+            find "$PROJECT_DIR" -maxdepth 4 -print
+            exit 1
+          fi
+
+          echo "Successfully generated: $PROJECT_FILE"
+
+      - name: Package Safari Xcode project
+        run: |
+          set -euo pipefail
+
+          PROJECT_DIR="$RUNNER_TEMP/safari-project"
+          OUTPUT="$RUNNER_TEMP/ai-video-radar-safari-xcode.zip"
+
+          ditto -c -k --keepParent \
+            "$PROJECT_DIR" \
+            "$OUTPUT"
+
+          if [ ! -s "$OUTPUT" ]; then
+            echo "::error::Safari project ZIP is missing or empty."
+            exit 1
+          fi
+
+          unzip -tq "$OUTPUT"
+
+          echo "Safari Xcode project successfully packaged."
+          ls -lh "$OUTPUT"
+
+      - name: Upload Safari Xcode project
+        uses: actions/upload-artifact@v4
         with:
           name: safari-xcode-project
           path: ${{ runner.temp }}/ai-video-radar-safari-xcode.zip
           if-no-files-found: error
+          retention-days: 14
+
+  # --------------------------------------------------
+  # 3. Publish GitHub release
+  # --------------------------------------------------
 
   release:
+    name: Publish GitHub release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [packages, safari]
+    needs:
+      - packages
+      - safari
+
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
     permissions:
       contents: write
+
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
         with:
           pattern: '*'
           merge-multiple: true
           path: release
+
+      - name: Verify release contents
+        run: |
+          set -euo pipefail
+
+          echo "Release files:"
+          ls -lah release
+
+          test -f release/SHA256SUMS.txt
+          test -f release/ai-video-radar-safari-xcode.zip
+
       - name: Publish downloadable GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
+
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --verify-tag --title "AI Video Radar $TAG" --notes "Full offline browser packages. Chromium: unpacked install or store submission. Firefox: unsigned ZIP for AMO signing, not a normal-install XPI. Safari: unsigned Xcode project; Apple signing and App Store submission required. AI guesses are not proof; store approval and browser compatibility are not guaranteed."
+            gh release create "$TAG" \
+              --verify-tag \
+              --title "AI Video Radar $TAG" \
+              --notes "Full offline browser packages.
+
+          Chromium: Unpacked installation or store submission.
+
+          Firefox: Unsigned ZIP for AMO signing. Not a normal-install XPI.
+
+          Safari: Unsigned Xcode project. Apple signing and App Store submission required.
+
+          SHA256SUMS.txt contains checksums for the browser packages.
+
+          AI guesses are not proof. Store approval and browser compatibility are not guaranteed."
           fi
+
           gh release upload "$TAG" release/* --clobber
+
+      - name: Release summary
+        run: |
+          echo "## Release published successfully" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tag: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Uploaded packages:" >> "$GITHUB_STEP_SUMMARY"
+          ls release >> "$GITHUB_STEP_SUMMARY"
